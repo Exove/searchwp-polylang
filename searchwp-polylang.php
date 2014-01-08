@@ -3,11 +3,11 @@
 Plugin Name: SearchWP Polylang Integration
 Plugin URI: https://searchwp.com/
 Description: Integrate SearchWP with Polylang
-Version: 0.1
+Version: 0.2
 Author: Jonathan Christopher
 Author URI: https://searchwp.com/
 
-Copyright 2013 Jonathan Christopher
+Copyright 2013-2014 Jonathan Christopher
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -33,30 +33,46 @@ class SearchWP_Polylang
 	{
 		add_action( 'after_plugin_row_' . plugin_basename( __FILE__ ), array( $this, 'plugin_row' ), 11 );
 
-		add_filter( 'searchwp_include', array( $this, 'includeOnlyCurrentLanguagePosts' ), 10, 1 );
+		add_filter( 'searchwp_include', array( $this, 'include_only_current_language_posts' ), 10, 3 );
 	}
 
-	function includeOnlyCurrentLanguagePosts()
+	function include_only_current_language_posts( $relevantPostIds, $engine, $terms )
 	{
-		$currentLanguage = pll_current_language();
-		if( false == $currentLanguage )
-			$currentLanguage = pll_default_language();
+		$post_ids = $relevantPostIds;
 
-		// get all posts in the current language
-		$args = array(
-			'post_type' => 'any',
-			'fields'    => 'ids',
-			'tax_query' => array(
-				array(
-					'taxonomy'  => 'language',
-					'field'     => 'slug',
-					'terms'     => $currentLanguage
+		if( function_exists( 'pll_current_language' ) && function_exists( 'pll_default_language' ) ) {
+
+			$currentLanguage = pll_current_language();
+
+			if ( false == $currentLanguage ) {
+				$currentLanguage = pll_default_language();
+			}
+
+			// get all posts in the current language
+			$args = array(
+				'post_type'     => 'any',
+				'post_status'   => 'any',
+				'fields'        => 'ids',
+				'tax_query'     => array(
+					array(
+						'taxonomy'  => 'language',
+						'field'     => 'slug',
+						'terms'     => $currentLanguage
+					)
 				)
-			)
-		);
-		$query = new WP_Query( $args );
+			);
 
-		return $query->posts;
+			// we may need to limit to relevant post IDs
+			if ( !empty( $relevantPostIds ) ) {
+				$args['post__in'] = $relevantPostIds;
+			}
+
+			$query = new WP_Query( $args );
+			$post_ids = $query->posts;
+
+		}
+
+		return $post_ids;
 	}
 
 	function plugin_row()
