@@ -3,7 +3,7 @@
 Plugin Name: SearchWP Polylang Integration
 Plugin URI: https://searchwp.com/
 Description: Integrate SearchWP with Polylang
-Version: 0.2
+Version: 0.3
 Author: Jonathan Christopher
 Author URI: https://searchwp.com/
 
@@ -50,6 +50,7 @@ class SearchWP_Polylang
 
 			// get all posts in the current language
 			$args = array(
+				'nopaging'      => true,
 				'post_type'     => 'any',
 				'post_status'   => 'any',
 				'fields'        => 'ids',
