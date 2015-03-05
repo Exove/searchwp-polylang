@@ -3,11 +3,11 @@
 Plugin Name: SearchWP Polylang Integration
 Plugin URI: https://searchwp.com/
 Description: Integrate SearchWP with Polylang
-Version: 0.3
+Version: 1.0
 Author: Jonathan Christopher
 Author URI: https://searchwp.com/
 
-Copyright 2013-2014 Jonathan Christopher
+Copyright 2013-2015 Jonathan Christopher
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -24,23 +24,71 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 */
 
 // exit if accessed directly
-if( !defined( 'ABSPATH' ) ) exit;
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
 
-class SearchWP_Polylang
-{
+if ( ! defined( 'SEARCHWP_POLYLANG_VERSION' ) ) {
+	define( 'SEARCHWP_POLYLANG_VERSION', '1.0' );
+}
 
-	function __construct()
-	{
+/**
+ * instantiate the updater
+ */
+if ( ! class_exists( 'SWP_Polylang_Updater' ) ) {
+	// load our custom updater
+	include_once( dirname( __FILE__ ) . '/vendor/updater.php' );
+}
+
+// set up the updater
+function searchwp_polylang_update_check() {
+
+	if ( defined( 'DOING_AJAX' ) && DOING_AJAX ) {
+		return;
+	}
+
+	// environment check
+	if ( ! defined( 'SEARCHWP_PREFIX' ) ) {
+		return;
+	}
+
+	if ( ! defined( 'SEARCHWP_EDD_STORE_URL' ) ) {
+		return;
+	}
+
+	if ( ! defined( 'SEARCHWP_POLYLANG_VERSION' ) ) {
+		return;
+	}
+
+	// retrieve stored license key
+	$license_key = trim( get_option( SEARCHWP_PREFIX . 'license_key' ) );
+
+	// instantiate the updater to prep the environment
+	$searchwp_polylang_updater = new SWP_Polylang_Updater( SEARCHWP_EDD_STORE_URL, __FILE__, array(
+			'item_id' 	=> 33648,
+			'version'   => SEARCHWP_POLYLANG_VERSION,
+			'license'   => $license_key,
+			'item_name' => 'Polylang Integration',
+			'author'    => 'Jonathan Christopher',
+			'url'       => site_url(),
+		)
+	);
+}
+
+add_action( 'admin_init', 'searchwp_polylang_update_check' );
+
+class SearchWP_Polylang {
+
+	function __construct() {
 		add_action( 'after_plugin_row_' . plugin_basename( __FILE__ ), array( $this, 'plugin_row' ), 11 );
 
 		add_filter( 'searchwp_include', array( $this, 'include_only_current_language_posts' ), 10, 3 );
 	}
 
-	function include_only_current_language_posts( $relevantPostIds, $engine, $terms )
-	{
+	function include_only_current_language_posts( $relevantPostIds, $engine, $terms ) {
 		$post_ids = $relevantPostIds;
 
-		if( function_exists( 'pll_current_language' ) && function_exists( 'pll_default_language' ) ) {
+		if ( function_exists( 'pll_current_language' ) && function_exists( 'pll_default_language' ) ) {
 
 			$currentLanguage = pll_current_language();
 
@@ -76,10 +124,8 @@ class SearchWP_Polylang
 		return $post_ids;
 	}
 
-	function plugin_row()
-	{
-		if( !class_exists( 'SearchWP' ) )
-		{ ?>
+	function plugin_row() {
+		if ( !class_exists( 'SearchWP' ) ) { ?>
 			<tr class="plugin-update-tr searchwp">
 				<td colspan="3" class="plugin-update">
 					<div class="update-message">
@@ -87,9 +133,7 @@ class SearchWP_Polylang
 					</div>
 				</td>
 			</tr>
-		<?php }
-		else
-		{
+		<?php } else {
 			$searchwp = SearchWP::instance();
 			if( version_compare( $searchwp->version, '1.1', '<' ) )
 			{ ?>
