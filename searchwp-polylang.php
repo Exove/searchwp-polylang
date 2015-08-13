@@ -3,7 +3,7 @@
 Plugin Name: SearchWP Polylang Integration
 Plugin URI: https://searchwp.com/
 Description: Integrate SearchWP with Polylang
-Version: 1.1
+Version: 1.2
 Author: Jonathan Christopher
 Author URI: https://searchwp.com/
 
@@ -29,7 +29,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 if ( ! defined( 'SEARCHWP_POLYLANG_VERSION' ) ) {
-	define( 'SEARCHWP_POLYLANG_VERSION', '1.1' );
+	define( 'SEARCHWP_POLYLANG_VERSION', '1.2' );
 }
 
 /**
@@ -86,6 +86,13 @@ class SearchWP_Polylang {
 		add_action( 'after_plugin_row_' . plugin_basename( __FILE__ ), array( $this, 'plugin_row' ), 11 );
 
 		add_filter( 'searchwp_include', array( $this, 'include_only_current_language_posts' ), 10, 3 );
+
+		// prevent interference with the indexer
+		add_action( 'searchwp_indexer_pre', array( $this, 'remove_all_unwanted_filters' ) );
+	}
+
+	function remove_all_unwanted_filters() {
+		remove_all_filters( 'parse_query' );
 	}
 
 	function include_only_current_language_posts( $relevantPostIds, $engine, $terms ) {
