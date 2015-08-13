@@ -3,7 +3,7 @@
 Plugin Name: SearchWP Polylang Integration
 Plugin URI: https://searchwp.com/
 Description: Integrate SearchWP with Polylang
-Version: 1.0
+Version: 1.1
 Author: Jonathan Christopher
 Author URI: https://searchwp.com/
 
@@ -29,7 +29,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 if ( ! defined( 'SEARCHWP_POLYLANG_VERSION' ) ) {
-	define( 'SEARCHWP_POLYLANG_VERSION', '1.0' );
+	define( 'SEARCHWP_POLYLANG_VERSION', '1.1' );
 }
 
 /**
@@ -44,24 +44,25 @@ if ( ! class_exists( 'SWP_Polylang_Updater' ) ) {
 function searchwp_polylang_update_check() {
 
 	if ( defined( 'DOING_AJAX' ) && DOING_AJAX ) {
-		return;
+		return false;
 	}
 
 	// environment check
 	if ( ! defined( 'SEARCHWP_PREFIX' ) ) {
-		return;
+		return false;
 	}
 
 	if ( ! defined( 'SEARCHWP_EDD_STORE_URL' ) ) {
-		return;
+		return false;
 	}
 
 	if ( ! defined( 'SEARCHWP_POLYLANG_VERSION' ) ) {
-		return;
+		return false;
 	}
 
 	// retrieve stored license key
 	$license_key = trim( get_option( SEARCHWP_PREFIX . 'license_key' ) );
+	$license_key = sanitize_text_field( $license_key );
 
 	// instantiate the updater to prep the environment
 	$searchwp_polylang_updater = new SWP_Polylang_Updater( SEARCHWP_EDD_STORE_URL, __FILE__, array(
@@ -73,6 +74,8 @@ function searchwp_polylang_update_check() {
 			'url'       => site_url(),
 		)
 	);
+
+	return $searchwp_polylang_updater;
 }
 
 add_action( 'admin_init', 'searchwp_polylang_update_check' );
@@ -86,6 +89,15 @@ class SearchWP_Polylang {
 	}
 
 	function include_only_current_language_posts( $relevantPostIds, $engine, $terms ) {
+
+		if ( isset( $engine ) ) {
+			$engine = null;
+		}
+
+		if ( isset( $terms ) ) {
+			$terms = null;
+		}
+
 		$post_ids = $relevantPostIds;
 
 		if ( function_exists( 'pll_current_language' ) && function_exists( 'pll_default_language' ) ) {
@@ -106,26 +118,25 @@ class SearchWP_Polylang {
 					array(
 						'taxonomy'  => 'language',
 						'field'     => 'slug',
-						'terms'     => $currentLanguage
-					)
+						'terms'     => sanitize_text_field( $currentLanguage ),
+					),
 				)
 			);
 
 			// we may need to limit to relevant post IDs
-			if ( !empty( $relevantPostIds ) ) {
-				$args['post__in'] = $relevantPostIds;
+			if ( ! empty( $relevantPostIds ) ) {
+				$args['post__in'] = array_map( 'absint', $relevantPostIds );
 			}
 
 			$query = new WP_Query( $args );
 			$post_ids = $query->posts;
-
 		}
 
 		return $post_ids;
 	}
 
 	function plugin_row() {
-		if ( !class_exists( 'SearchWP' ) ) { ?>
+		if ( ! class_exists( 'SearchWP' ) ) { ?>
 			<tr class="plugin-update-tr searchwp">
 				<td colspan="3" class="plugin-update">
 					<div class="update-message">
@@ -133,19 +144,18 @@ class SearchWP_Polylang {
 					</div>
 				</td>
 			</tr>
-		<?php } else {
-			$searchwp = SearchWP::instance();
-			if( version_compare( $searchwp->version, '1.1', '<' ) )
-			{ ?>
-				<tr class="plugin-update-tr searchwp">
-					<td colspan="3" class="plugin-update">
-						<div class="update-message">
-							<?php _e( 'SearchWP Polylang Integration requires SearchWP 1.1 or greater', $searchwp->textDomain ); ?>
-						</div>
-					</td>
-				</tr>
-			<?php }
-		}
+		<?php } else { ?>
+		<?php $searchwp = SWP(); ?>
+		<?php if ( version_compare( $searchwp->version, '1.1', '<' ) ) : ?>
+			<tr class="plugin-update-tr searchwp">
+				<td colspan="3" class="plugin-update">
+					<div class="update-message">
+						<?php _e( 'SearchWP Polylang Integration requires SearchWP 1.1 or greater', $searchwp->textDomain ); ?>
+					</div>
+				</td>
+			</tr>
+		<?php endif; ?>
+	<?php }
 	}
 
 }
