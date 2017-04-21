@@ -1,0 +1,9 @@
+{
+  "name": "Exove/page-templater",
+  "description": "Polylang integration for SearchWP",
+  "type": "wordpress-plugin",
+  "minimum-stability": "dev",
+  "require": {
+    "composer/installers": "~1.0"
+  }
+}
