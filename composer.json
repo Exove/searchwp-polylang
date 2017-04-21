@@ -1,5 +1,5 @@
 {
-  "name": "Exove/page-templater",
+  "name": "Exove/searchwp-polylang",
   "description": "Polylang integration for SearchWP",
   "type": "wordpress-plugin",
   "minimum-stability": "dev",
